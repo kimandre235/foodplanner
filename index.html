@@ -1,0 +1,1570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Cozy Dinner Planner</title>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="default"/>
+<meta name="apple-mobile-web-app-title" content="Dinner Planner"/>
+<meta name="theme-color" content="#C07A3A"/>
+<link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDI0IDEwMjQiPjxyZWN0IHdpZHRoPSIxMDI0IiBoZWlnaHQ9IjEwMjQiIHJ4PSIyMDAiIGZpbGw9IiNDMDdBM0EiLz48dGV4dCB5PSIuOWVtIiB4PSI1MCUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtc2l6ZT0iNjAwIj7wn42yfTwvdGV4dD48L3N2Zz4="/>
+<link rel="manifest" id="pwa-manifest"/>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body,#root{height:100%}
+  body{background:#FDF6EE;font-family:system-ui,sans-serif;color:#3A2A1A}
+  input,textarea,select,button{font-family:inherit}
+  ::-webkit-scrollbar{width:6px}
+  ::-webkit-scrollbar-thumb{background:#E8D8C4;border-radius:3px}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+const manifest = {name:"Cozy Dinner Planner",short_name:"Dinner Planner",start_url:"./index.html",display:"standalone",background_color:"#FDF6EE",theme_color:"#C07A3A",icons:[{src:"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDI0IDEwMjQiPjxyZWN0IHdpZHRoPSIxMDI0IiBoZWlnaHQ9IjEwMjQiIHJ4PSIyMDAiIGZpbGw9IiNDMDdBM0EiLz48dGV4dCB5PSIuOWVtIiB4PSI1MCUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtc2l6ZT0iNjAwIj7wn42yfTwvdGV4dD48L3N2Zz4=",sizes:"512x512",type:"image/svg+xml",purpose:"any maskable"}]};
+const blob = new Blob([JSON.stringify(manifest)],{type:"application/json"});
+document.getElementById("pwa-manifest").setAttribute("href",URL.createObjectURL(blob));
+</script>
+<script>
+window.__mountTimeout = setTimeout(function() {
+  var root = document.getElementById("root");
+  if (root && !root.hasChildNodes()) {
+    root.innerHTML = '<div style="max-width:480px;margin:60px auto;padding:24px;text-align:center;font-family:system-ui,sans-serif;color:#3A2A1A;">' +
+      '<h2 style="margin-bottom:12px;">App failed to load</h2>' +
+      '<p style="color:#8A6A4A;margin-bottom:8px;">This usually means a required script (React, or a browser extension/security tool) was blocked.</p>' +
+      '<p style="color:#8A6A4A;font-size:13px;">Try: a different browser, disabling extensions, or an incognito window.</p>' +
+      '</div>';
+  }
+}, 6000);
+</script>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script>
+if (typeof React === "undefined" || typeof ReactDOM === "undefined") {
+  document.getElementById("root").innerHTML = '<div style="max-width:480px;margin:60px auto;padding:24px;text-align:center;font-family:system-ui,sans-serif;color:#3A2A1A;"><h2>App failed to load</h2><p style="color:#8A6A4A;">React could not be loaded from the CDN. Check your internet connection or try a different browser.</p></div>';
+} else {
+const SUPABASE_URL = "https://zmwtvjkibdxqrhsinxxb.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inptd3R2amtpYmR4cXJoc2lueHhiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1MDkzMDgsImV4cCI6MjA5MDA4NTMwOH0.h4JxHfrPawN4wkDCceUepjBGd6xcCIroX6JG1GR0Duw";
+const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+const CATEGORIES = ["Beef", "Chicken", "Pork", "Fish", "Vegan", "Mixed"];
+const w = {
+  bg: "#FDF6EE",
+  card: "#FFFAF4",
+  border: "#E8D8C4",
+  accent: "#C07A3A",
+  accent2: "#E8A96A",
+  text: "#3A2A1A",
+  muted: "#8A6A4A",
+  light: "#F5E8D4",
+  star: "#C07A3A",
+  danger: "#C0503A"
+};
+const {
+  useState,
+  useEffect,
+  useRef
+} = React;
+const api = async (path, method = "GET", body = null) => {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
+    method,
+    headers: {
+      "apikey": SUPABASE_KEY,
+      "Authorization": `Bearer ${SUPABASE_KEY}`,
+      "Content-Type": "application/json",
+      "Prefer": method === "POST" ? "resolution=merge-duplicates,return=minimal" : "return=minimal"
+    },
+    body: body ? JSON.stringify(body) : null
+  });
+  if (!res.ok) {
+    const e = await res.text();
+    throw new Error(`${res.status}: ${e}`);
+  }
+  if (method === "GET") return res.json();
+  return true;
+};
+const resizeImage = (file, maxDim = 1000, quality = 0.8) => new Promise((resolve, reject) => {
+  const img = new Image();
+  const objectUrl = URL.createObjectURL(file);
+  img.onload = () => {
+    URL.revokeObjectURL(objectUrl);
+    let {
+      width,
+      height
+    } = img;
+    if (width > maxDim || height > maxDim) {
+      if (width > height) {
+        height = Math.round(height * (maxDim / width));
+        width = maxDim;
+      } else {
+        width = Math.round(width * (maxDim / height));
+        height = maxDim;
+      }
+    }
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    canvas.getContext("2d").drawImage(img, 0, 0, width, height);
+    canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error("Image compression failed")), "image/jpeg", quality);
+  };
+  img.onerror = () => {
+    URL.revokeObjectURL(objectUrl);
+    reject(new Error("Could not read image file"));
+  };
+  img.src = objectUrl;
+});
+const uploadImage = async file => {
+  let uploadBlob = file;
+  let ext = file.name.split(".").pop();
+  if (file.type.startsWith("image/") && file.type !== "image/gif") {
+    try {
+      uploadBlob = await resizeImage(file);
+      ext = "jpg";
+    } catch (e) {
+      uploadBlob = file;
+    }
+  }
+  const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+  const res = await fetch(`${SUPABASE_URL}/storage/v1/object/recipe-images/${fileName}`, {
+    method: "POST",
+    headers: {
+      "apikey": SUPABASE_KEY,
+      "Authorization": `Bearer ${SUPABASE_KEY}`,
+      "Content-Type": uploadBlob.type || "image/jpeg",
+      "Cache-Control": "3600"
+    },
+    body: uploadBlob
+  });
+  if (!res.ok) throw new Error("Image upload failed");
+  return `${SUPABASE_URL}/storage/v1/object/public/recipe-images/${fileName}`;
+};
+const deleteImage = async url => {
+  if (!url || !url.includes("recipe-images")) return;
+  const fileName = url.split("/recipe-images/").pop();
+  await fetch(`${SUPABASE_URL}/storage/v1/object/recipe-images/${fileName}`, {
+    method: "DELETE",
+    headers: {
+      "apikey": SUPABASE_KEY,
+      "Authorization": `Bearer ${SUPABASE_KEY}`
+    }
+  });
+};
+function StarRating({
+  value,
+  onChange,
+  label
+}) {
+  const [hover, setHover] = useState(0);
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      alignItems: "center",
+      gap: 6
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 12,
+      color: w.muted,
+      minWidth: 60
+    }
+  }, label), [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => /*#__PURE__*/React.createElement("span", {
+    key: n,
+    onClick: () => onChange(n),
+    onMouseEnter: () => setHover(n),
+    onMouseLeave: () => setHover(0),
+    style: {
+      cursor: "pointer",
+      fontSize: 14,
+      color: (hover || value) >= n ? w.star : "#D4B896",
+      userSelect: "none"
+    }
+  }, "●")), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 13,
+      fontWeight: 500,
+      color: w.accent,
+      minWidth: 24
+    }
+  }, value || "–"));
+}
+function ImageField({
+  value,
+  onChange
+}) {
+  const [uploading, setUploading] = useState(false);
+  const [urlError, setUrlError] = useState(false);
+  const handleFile = async e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const url = await uploadImage(file);
+      onChange(url);
+    } catch (err) {
+      alert("Upload failed, please try again.");
+    }
+    setUploading(false);
+  };
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      flexDirection: "column",
+      gap: 4
+    }
+  }, /*#__PURE__*/React.createElement("label", {
+    style: {
+      fontSize: 12,
+      color: w.muted
+    }
+  }, "Image"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 8,
+      alignItems: "center"
+    }
+  }, /*#__PURE__*/React.createElement("input", {
+    type: "url",
+    value: value && value.startsWith("data:") ? "" : value || "",
+    onChange: e => {
+      onChange(e.target.value);
+      setUrlError(false);
+    },
+    placeholder: "Paste image URL…",
+    style: {
+      flex: 1,
+      padding: "8px 10px",
+      borderRadius: 8,
+      border: `1px solid ${urlError ? w.danger : w.border}`,
+      background: w.bg,
+      color: w.text,
+      fontSize: 14,
+      outline: "none"
+    }
+  }), /*#__PURE__*/React.createElement("label", {
+    style: {
+      background: w.light,
+      border: `1px solid ${w.border}`,
+      borderRadius: 8,
+      padding: "8px 12px",
+      cursor: uploading ? "default" : "pointer",
+      fontSize: 13,
+      color: w.muted,
+      whiteSpace: "nowrap",
+      flexShrink: 0,
+      opacity: uploading ? 0.6 : 1
+    }
+  }, uploading ? "Uploading…" : "Upload", /*#__PURE__*/React.createElement("input", {
+    type: "file",
+    accept: "image/*",
+    style: {
+      display: "none"
+    },
+    disabled: uploading,
+    onChange: handleFile
+  }))), urlError && /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 11,
+      color: w.danger
+    }
+  }, "URL failed to load — try a direct image link or upload instead"), value && /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: "relative",
+      width: "100%",
+      height: 120,
+      borderRadius: 8,
+      overflow: "hidden",
+      border: `1px solid ${w.border}`,
+      marginTop: 4
+    }
+  }, /*#__PURE__*/React.createElement("img", {
+    src: value,
+    alt: "preview",
+    style: {
+      width: "100%",
+      height: "100%",
+      objectFit: "cover"
+    },
+    onError: () => setUrlError(true),
+    onLoad: () => setUrlError(false)
+  }), /*#__PURE__*/React.createElement("button", {
+    onClick: () => {
+      onChange("");
+      setUrlError(false);
+    },
+    style: {
+      position: "absolute",
+      top: 6,
+      right: 6,
+      background: "rgba(0,0,0,0.4)",
+      border: "none",
+      borderRadius: "50%",
+      width: 24,
+      height: 24,
+      cursor: "pointer",
+      color: "#fff",
+      fontSize: 14,
+      lineHeight: "24px",
+      textAlign: "center"
+    }
+  }, "×")));
+}
+function EditFields({
+  form,
+  set
+}) {
+  return /*#__PURE__*/React.createElement(React.Fragment, null, [["Title", "title", "text"], ["Recipe link", "link", "url"]].map(([lbl, key, type]) => /*#__PURE__*/React.createElement("div", {
+    key: key,
+    style: {
+      display: "flex",
+      flexDirection: "column",
+      gap: 4
+    }
+  }, /*#__PURE__*/React.createElement("label", {
+    style: {
+      fontSize: 12,
+      color: w.muted
+    }
+  }, lbl), /*#__PURE__*/React.createElement("input", {
+    type: type,
+    value: form[key] || "",
+    onChange: e => set(key, e.target.value),
+    style: {
+      padding: "8px 10px",
+      borderRadius: 8,
+      border: `1px solid ${w.border}`,
+      background: w.bg,
+      color: w.text,
+      fontSize: 14,
+      outline: "none"
+    }
+  }))), /*#__PURE__*/React.createElement(ImageField, {
+    value: form.image,
+    onChange: v => set("image", v)
+  }), [["Description", "description", 3], ["Ingredients", "ingredients", 3]].map(([lbl, key, rows]) => /*#__PURE__*/React.createElement("div", {
+    key: key,
+    style: {
+      display: "flex",
+      flexDirection: "column",
+      gap: 4
+    }
+  }, /*#__PURE__*/React.createElement("label", {
+    style: {
+      fontSize: 12,
+      color: w.muted
+    }
+  }, lbl), /*#__PURE__*/React.createElement("textarea", {
+    value: form[key] || "",
+    onChange: e => set(key, e.target.value),
+    rows: rows,
+    style: {
+      padding: "8px 10px",
+      borderRadius: 8,
+      border: `1px solid ${w.border}`,
+      background: w.bg,
+      color: w.text,
+      fontSize: 14,
+      resize: "vertical",
+      outline: "none"
+    }
+  }))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      flexDirection: "column",
+      gap: 4
+    }
+  }, /*#__PURE__*/React.createElement("label", {
+    style: {
+      fontSize: 12,
+      color: w.muted
+    }
+  }, "Category"), /*#__PURE__*/React.createElement("select", {
+    value: form.category || "",
+    onChange: e => set("category", e.target.value),
+    style: {
+      padding: "8px 10px",
+      borderRadius: 8,
+      border: `1px solid ${w.border}`,
+      background: w.bg,
+      color: w.text,
+      fontSize: 14,
+      outline: "none"
+    }
+  }, /*#__PURE__*/React.createElement("option", {
+    value: ""
+  }, "— Select category —"), CATEGORIES.map(c => /*#__PURE__*/React.createElement("option", {
+    key: c,
+    value: c
+  }, c)))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      flexDirection: "column",
+      gap: 4
+    }
+  }, /*#__PURE__*/React.createElement("label", {
+    style: {
+      fontSize: 12,
+      color: w.muted
+    }
+  }, "Difficulty"), /*#__PURE__*/React.createElement("select", {
+    value: form.difficulty || "",
+    onChange: e => set("difficulty", e.target.value),
+    style: {
+      padding: "8px 10px",
+      borderRadius: 8,
+      border: `1px solid ${w.border}`,
+      background: w.bg,
+      color: w.text,
+      fontSize: 14,
+      outline: "none"
+    }
+  }, /*#__PURE__*/React.createElement("option", {
+    value: ""
+  }, "— Select difficulty —"), ["Very easy", "Easy", "Medium", "Hard", "Very hard"].map(d => /*#__PURE__*/React.createElement("option", {
+    key: d,
+    value: d
+  }, d)))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: w.light,
+      borderRadius: 10,
+      padding: "12px 14px",
+      display: "flex",
+      flexDirection: "column",
+      gap: 8
+    }
+  }, /*#__PURE__*/React.createElement("p", {
+    style: {
+      margin: "0 0 4px",
+      fontSize: 12,
+      fontWeight: 500,
+      color: w.muted
+    }
+  }, "Ratings"), /*#__PURE__*/React.createElement(StarRating, {
+    value: form.myRating || 0,
+    onChange: v => set("myRating", v),
+    label: "His"
+  }), /*#__PURE__*/React.createElement(StarRating, {
+    value: form.partnerRating || 0,
+    onChange: v => set("partnerRating", v),
+    label: "Hers"
+  })));
+}
+function ViewModal({
+  recipe,
+  onSave,
+  onDelete,
+  onClose
+}) {
+  const [editing, setEditing] = useState(false);
+  const [form, setForm] = useState({
+    ...recipe
+  });
+  const [saving, setSaving] = useState(false);
+  const set = (k, v) => setForm(f => ({
+    ...f,
+    [k]: v
+  }));
+  const avg = form.myRating && form.partnerRating ? ((form.myRating + form.partnerRating) / 2).toFixed(1) : form.myRating || form.partnerRating || null;
+  const diffColor = {
+    "Very easy": "#5A9A5A",
+    "Easy": "#8AB85A",
+    "Medium": "#C8963A",
+    "Hard": "#C06030",
+    "Very hard": "#B03A3A"
+  };
+  const RatingDots = ({
+    value,
+    label
+  }) => /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      alignItems: "center",
+      gap: 6
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 13,
+      color: w.muted,
+      minWidth: 40
+    }
+  }, label), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 3
+    }
+  }, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => /*#__PURE__*/React.createElement("span", {
+    key: n,
+    style: {
+      fontSize: 13,
+      color: value >= n ? w.star : "#D4B896"
+    }
+  }, "●"))), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 13,
+      fontWeight: 500,
+      color: w.accent
+    }
+  }, value || "–"));
+  const handleSave = async () => {
+    setSaving(true);
+    await onSave(form);
+    setSaving(false);
+    setEditing(false);
+  };
+  return /*#__PURE__*/React.createElement("div", {
+    onClick: onClose,
+    style: {
+      position: "fixed",
+      inset: 0,
+      background: "rgba(60,30,10,0.4)",
+      zIndex: 100,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      padding: 16
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    onClick: e => e.stopPropagation(),
+    style: {
+      background: w.card,
+      border: `1px solid ${w.border}`,
+      borderRadius: 18,
+      width: "100%",
+      maxWidth: 480,
+      maxHeight: "90vh",
+      overflowY: "auto",
+      display: "flex",
+      flexDirection: "column"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: "100%",
+      height: 200,
+      background: w.light,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      overflow: "hidden",
+      flexShrink: 0,
+      borderRadius: "18px 18px 0 0",
+      position: "relative"
+    }
+  }, form.image ? /*#__PURE__*/React.createElement("img", {
+    src: form.image,
+    alt: form.title,
+    style: {
+      width: "100%",
+      height: "100%",
+      objectFit: "cover"
+    },
+    onError: e => e.target.style.display = "none"
+  }) : /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 48
+    }
+  }, "🍽"), /*#__PURE__*/React.createElement("button", {
+    onClick: onClose,
+    style: {
+      position: "absolute",
+      top: 10,
+      right: 10,
+      background: "rgba(0,0,0,0.35)",
+      border: "none",
+      borderRadius: "50%",
+      width: 30,
+      height: 30,
+      cursor: "pointer",
+      color: "#fff",
+      fontSize: 18,
+      lineHeight: "30px",
+      textAlign: "center"
+    }
+  }, "×")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: "18px 20px 24px",
+      display: "flex",
+      flexDirection: "column",
+      gap: 14
+    }
+  }, editing ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(EditFields, {
+    form: form,
+    set: set
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 8
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: () => setEditing(false),
+    style: {
+      flex: 1,
+      background: "transparent",
+      border: `1px solid ${w.border}`,
+      borderRadius: 10,
+      padding: "9px",
+      cursor: "pointer",
+      fontSize: 14,
+      color: w.muted
+    }
+  }, "Cancel"), /*#__PURE__*/React.createElement("button", {
+    onClick: handleSave,
+    disabled: saving,
+    style: {
+      flex: 2,
+      background: w.accent,
+      color: "#fff",
+      border: "none",
+      borderRadius: 10,
+      padding: "10px",
+      cursor: "pointer",
+      fontSize: 15,
+      fontWeight: 500
+    }
+  }, saving ? "Saving…" : "Save")), /*#__PURE__*/React.createElement("button", {
+    onClick: () => onDelete(form.id),
+    style: {
+      background: "none",
+      border: `1px solid #E8C4B8`,
+      borderRadius: 10,
+      padding: "8px",
+      cursor: "pointer",
+      fontSize: 14,
+      color: w.danger
+    }
+  }, "Remove recipe")) : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "flex-start",
+      gap: 10
+    }
+  }, /*#__PURE__*/React.createElement("h2", {
+    style: {
+      margin: 0,
+      fontSize: 20,
+      color: w.text,
+      lineHeight: 1.3
+    }
+  }, form.title), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "flex-end",
+      gap: 4,
+      flexShrink: 0
+    }
+  }, avg && /*#__PURE__*/React.createElement("span", {
+    style: {
+      background: w.accent,
+      color: "#fff",
+      borderRadius: 20,
+      padding: "3px 10px",
+      fontSize: 13,
+      fontWeight: 500
+    }
+  }, avg, "/10"), form.category && /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 12,
+      color: w.muted,
+      background: w.light,
+      borderRadius: 20,
+      padding: "2px 10px"
+    }
+  }, form.category), form.difficulty && /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 12,
+      fontWeight: 500,
+      color: diffColor[form.difficulty] || w.muted
+    }
+  }, form.difficulty))), form.description && /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("p", {
+    style: {
+      margin: "0 0 4px",
+      fontSize: 12,
+      fontWeight: 500,
+      color: w.muted,
+      textTransform: "uppercase",
+      letterSpacing: "0.05em"
+    }
+  }, "About"), /*#__PURE__*/React.createElement("p", {
+    style: {
+      margin: 0,
+      fontSize: 14,
+      color: w.text,
+      lineHeight: 1.7
+    }
+  }, form.description)), form.ingredients && /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: w.light,
+      borderRadius: 10,
+      padding: "12px 14px"
+    }
+  }, /*#__PURE__*/React.createElement("p", {
+    style: {
+      margin: "0 0 8px",
+      fontSize: 12,
+      fontWeight: 500,
+      color: w.muted,
+      textTransform: "uppercase",
+      letterSpacing: "0.05em"
+    }
+  }, "Ingredients"), /*#__PURE__*/React.createElement("p", {
+    style: {
+      margin: 0,
+      fontSize: 14,
+      color: w.text,
+      lineHeight: 1.8,
+      whiteSpace: "pre-wrap"
+    }
+  }, form.ingredients)), form.myRating || form.partnerRating ? /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: w.light,
+      borderRadius: 10,
+      padding: "12px 14px",
+      display: "flex",
+      flexDirection: "column",
+      gap: 8
+    }
+  }, /*#__PURE__*/React.createElement("p", {
+    style: {
+      margin: "0 0 4px",
+      fontSize: 12,
+      fontWeight: 500,
+      color: w.muted,
+      textTransform: "uppercase",
+      letterSpacing: "0.05em"
+    }
+  }, "Ratings"), /*#__PURE__*/React.createElement(RatingDots, {
+    value: form.myRating,
+    label: "His"
+  }), /*#__PURE__*/React.createElement(RatingDots, {
+    value: form.partnerRating,
+    label: "Hers"
+  })) : null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 8,
+      paddingTop: 2
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: () => setEditing(true),
+    style: {
+      flex: 1,
+      background: "transparent",
+      border: `1px solid ${w.border}`,
+      borderRadius: 10,
+      padding: "9px",
+      cursor: "pointer",
+      fontSize: 14,
+      color: w.muted
+    }
+  }, "Edit"), form.link && /*#__PURE__*/React.createElement("button", {
+    onClick: () => window.open(form.link, "_blank"),
+    style: {
+      flex: 2,
+      background: w.accent,
+      color: "#fff",
+      border: "none",
+      borderRadius: 10,
+      padding: "10px",
+      cursor: "pointer",
+      fontSize: 14,
+      fontWeight: 500
+    }
+  }, "View source"))))));
+}
+function AddModal({
+  onSave,
+  onClose
+}) {
+  const [form, setForm] = useState({
+    title: "",
+    image: "",
+    link: "",
+    description: "",
+    ingredients: "",
+    category: "",
+    difficulty: "",
+    myRating: 0,
+    partnerRating: 0
+  });
+  const [saving, setSaving] = useState(false);
+  const set = (k, v) => setForm(f => ({
+    ...f,
+    [k]: v
+  }));
+  const handleSave = async () => {
+    if (!form.title.trim()) return;
+    setSaving(true);
+    await onSave({
+      ...form,
+      id: Date.now().toString()
+    });
+    setSaving(false);
+    onClose();
+  };
+  return /*#__PURE__*/React.createElement("div", {
+    onClick: onClose,
+    style: {
+      position: "fixed",
+      inset: 0,
+      background: "rgba(60,30,10,0.4)",
+      zIndex: 100,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      padding: 16
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    onClick: e => e.stopPropagation(),
+    style: {
+      background: w.card,
+      border: `1px solid ${w.border}`,
+      borderRadius: 18,
+      padding: 24,
+      width: "100%",
+      maxWidth: 480,
+      maxHeight: "90vh",
+      overflowY: "auto",
+      display: "flex",
+      flexDirection: "column",
+      gap: 14
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center"
+    }
+  }, /*#__PURE__*/React.createElement("h2", {
+    style: {
+      margin: 0,
+      fontSize: 18,
+      color: w.text
+    }
+  }, "New recipe"), /*#__PURE__*/React.createElement("button", {
+    onClick: onClose,
+    style: {
+      background: "none",
+      border: "none",
+      fontSize: 22,
+      cursor: "pointer",
+      color: w.muted
+    }
+  }, "×")), /*#__PURE__*/React.createElement(EditFields, {
+    form: form,
+    set: set
+  }), /*#__PURE__*/React.createElement("button", {
+    onClick: handleSave,
+    disabled: saving,
+    style: {
+      background: w.accent,
+      color: "#fff",
+      border: "none",
+      borderRadius: 10,
+      padding: "10px",
+      cursor: "pointer",
+      fontSize: 15,
+      fontWeight: 500
+    }
+  }, saving ? "Saving…" : "Add recipe")));
+}
+function RecipeCard({
+  recipe,
+  onView,
+  onSelect,
+  selecting,
+  ratingMode
+}) {
+  const avg = recipe.myRating && recipe.partnerRating ? ((recipe.myRating + recipe.partnerRating) / 2).toFixed(1) : recipe.myRating || recipe.partnerRating || null;
+  const displayRating = ratingMode === "his" ? recipe.myRating || null : ratingMode === "hers" ? recipe.partnerRating || null : avg;
+  const ratingLabel = ratingMode === "his" ? "His" : ratingMode === "hers" ? "Hers" : null;
+  return /*#__PURE__*/React.createElement("div", {
+    onClick: !selecting ? () => onView(recipe) : undefined,
+    style: {
+      background: w.card,
+      border: `1px solid ${w.border}`,
+      borderRadius: 14,
+      overflow: "hidden",
+      cursor: selecting ? "default" : "pointer",
+      display: "flex",
+      flexDirection: "column"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: "100%",
+      height: 150,
+      background: w.light,
+      overflow: "hidden",
+      flexShrink: 0,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center"
+    }
+  }, recipe.image ? /*#__PURE__*/React.createElement("img", {
+    src: recipe.image,
+    alt: recipe.title,
+    style: {
+      width: "100%",
+      height: "100%",
+      objectFit: "cover"
+    }
+  }) : /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 28
+    }
+  }, "🍽")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: "10px 12px 12px",
+      display: "flex",
+      flexDirection: "column",
+      gap: 6
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      gap: 8
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontWeight: 500,
+      fontSize: 15,
+      color: w.text
+    }
+  }, recipe.title), displayRating && /*#__PURE__*/React.createElement("span", {
+    style: {
+      background: w.accent,
+      color: "#fff",
+      borderRadius: 20,
+      padding: "2px 8px",
+      fontSize: 12,
+      fontWeight: 500,
+      whiteSpace: "nowrap",
+      flexShrink: 0
+    }
+  }, ratingLabel && /*#__PURE__*/React.createElement("span", {
+    style: {
+      opacity: 0.85,
+      marginRight: 3,
+      fontSize: 11
+    }
+  }, ratingLabel), displayRating, "/10")), recipe.category && /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 11,
+      color: w.muted,
+      background: w.light,
+      borderRadius: 20,
+      padding: "2px 8px",
+      alignSelf: "flex-start"
+    }
+  }, recipe.category)), selecting && /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: "0 12px 12px"
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: e => {
+      e.stopPropagation();
+      onSelect(recipe);
+    },
+    style: {
+      background: w.accent,
+      color: "#fff",
+      border: "none",
+      borderRadius: 8,
+      padding: "5px 12px",
+      cursor: "pointer",
+      fontSize: 13,
+      fontWeight: 500
+    }
+  }, "Pick this")));
+}
+function App() {
+  const [tab, setTab] = useState("planner");
+  const [recipes, setRecipes] = useState([]);
+  const [week, setWeek] = useState({});
+  const [weekNotes, setWeekNotes] = useState({});
+  const [showAdd, setShowAdd] = useState(false);
+  const [viewing, setViewing] = useState(null);
+  const [picking, setPicking] = useState(null);
+  const [search, setSearch] = useState("");
+  const [filterCat, setFilterCat] = useState("");
+  const [sortBy, setSortBy] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [recipesFullyLoaded, setRecipesFullyLoaded] = useState(false);
+  const [error, setError] = useState(null);
+  const scrollRef = useRef(null);
+  const loadData = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      // Step 1: fetch the week plan first — it's tiny (max 7 rows) and tells us
+      // which recipes are actually needed to render the planner right now.
+      const wRows = await api("week?select=*");
+      const newWeek = {},
+        newNotes = {};
+      if (Array.isArray(wRows)) wRows.forEach(r => {
+        newWeek[r.day] = r.recipe_id;
+        if (r.note) newNotes[r.day] = r.note;
+      });
+      setWeek(newWeek);
+      setWeekNotes(newNotes);
+
+      // Step 2: fetch only the handful of recipes referenced by this week's plan,
+      // so the planner can render fully without waiting on the whole recipe library.
+      const neededIds = [...new Set(Object.values(newWeek).filter(Boolean))];
+      if (neededIds.length > 0) {
+        const idList = neededIds.map(id => encodeURIComponent(id)).join(",");
+        const initialRows = await api(`recipes?select=*&id=in.(${idList})`);
+        if (Array.isArray(initialRows)) setRecipes(initialRows.map(r => r.data));
+      }
+      setLoading(false); // planner can render now — rest loads quietly behind it
+
+      // Step 3: fetch the full recipe library in the background (powers the
+      // Recipes tab, search, and "pick a recipe" flows). Merge by id rather than
+      // overwrite wholesale, so any add/edit/delete made while this was in flight
+      // (via the optimistic local updates in addRecipe/saveRecipe/deleteRecipe) isn't lost.
+      api("recipes?select=*").then(allRows => {
+        if (Array.isArray(allRows)) {
+          const fetched = allRows.map(r => r.data);
+          setRecipes(current => {
+            const currentIds = new Set(current.map(r => r.id));
+            const onlyNew = fetched.filter(r => !currentIds.has(r.id));
+            return [...current, ...onlyNew];
+          });
+        }
+        setRecipesFullyLoaded(true);
+      }).catch(() => {/* background refresh failed silently; week view still works */});
+    } catch (e) {
+      setError("Could not connect. " + e.message);
+      setLoading(false);
+    }
+  };
+  useEffect(() => {
+    loadData();
+  }, []);
+  const addRecipe = async r => {
+    await api("recipes", "POST", {
+      id: r.id,
+      data: r
+    });
+    setRecipes(rs => [...rs, r]);
+  };
+  const saveRecipe = async r => {
+    const old = recipes.find(x => x.id === r.id);
+    if (old && old.image && old.image !== r.image) await deleteImage(old.image);
+    await api("recipes", "POST", {
+      id: r.id,
+      data: r
+    });
+    setRecipes(rs => rs.map(x => x.id === r.id ? r : x));
+    setViewing(r);
+  };
+  const deleteRecipe = async id => {
+    const recipe = recipes.find(r => r.id === id);
+    if (recipe && recipe.image) await deleteImage(recipe.image);
+    await api(`recipes?id=eq.${id}`, "DELETE");
+    setRecipes(rs => rs.filter(r => r.id !== id));
+    const nw = {
+      ...week
+    };
+    await Promise.all(Object.entries(week).filter(([, v]) => v === id).map(([d]) => api(`week?day=eq.${encodeURIComponent(d)}`, "DELETE")));
+    Object.keys(nw).forEach(d => {
+      if (nw[d] === id) delete nw[d];
+    });
+    setWeek(nw);
+    setViewing(null);
+  };
+  const setWeekDay = async (day, recipeId) => {
+    const note = weekNotes[day] || null;
+    if (recipeId) {
+      await api("week", "POST", {
+        day,
+        recipe_id: recipeId,
+        note
+      });
+      setWeek(wk => ({
+        ...wk,
+        [day]: recipeId
+      }));
+    } else {
+      await api(`week?day=eq.${encodeURIComponent(day)}`, "DELETE");
+      setWeek(wk => {
+        const n = {
+          ...wk
+        };
+        delete n[day];
+        return n;
+      });
+      setWeekNotes(wn => {
+        const n = {
+          ...wn
+        };
+        delete n[day];
+        return n;
+      });
+    }
+  };
+  const saveNote = async (day, note) => {
+    setWeekNotes(wn => ({
+      ...wn,
+      [day]: note
+    }));
+    await api("week", "POST", {
+      day,
+      recipe_id: week[day] || null,
+      note: note || null
+    });
+  };
+  const pickMeal = day => {
+    setPicking(day);
+    setTab("recipes");
+  };
+  const selectRecipe = async recipe => {
+    await setWeekDay(picking, recipe.id);
+    setPicking(null);
+    setTab("planner");
+  };
+  const getAvg = r => r.myRating && r.partnerRating ? (r.myRating + r.partnerRating) / 2 : r.myRating || r.partnerRating || 0;
+  const filtered = recipes.filter(r => r.title.toLowerCase().includes(search.toLowerCase()) && (filterCat === "" || r.category === filterCat)).sort((a, b) => {
+    if (sortBy === "avg-desc") return getAvg(b) - getAvg(a);
+    if (sortBy === "avg-asc") return getAvg(a) - getAvg(b);
+    if (sortBy === "his-desc") return (b.myRating || 0) - (a.myRating || 0);
+    if (sortBy === "his-asc") return (a.myRating || 0) - (b.myRating || 0);
+    if (sortBy === "hers-desc") return (b.partnerRating || 0) - (a.partnerRating || 0);
+    if (sortBy === "hers-asc") return (a.partnerRating || 0) - (b.partnerRating || 0);
+    return 0;
+  });
+  const ratingMode = sortBy.startsWith("his") ? "his" : sortBy.startsWith("hers") ? "hers" : "avg";
+  const tabBtn = (t, label) => /*#__PURE__*/React.createElement("button", {
+    onClick: () => setTab(t),
+    style: {
+      padding: "8px 16px",
+      cursor: "pointer",
+      fontWeight: 500,
+      fontSize: 14,
+      border: "none",
+      background: tab === t ? w.accent : "transparent",
+      color: tab === t ? "#fff" : w.muted,
+      borderRadius: 10
+    }
+  }, label);
+  return /*#__PURE__*/React.createElement("div", {
+    ref: scrollRef,
+    style: {
+      height: "100vh",
+      overflowY: "auto",
+      background: w.bg
+    }
+  }, showAdd && /*#__PURE__*/React.createElement(AddModal, {
+    onSave: addRecipe,
+    onClose: () => setShowAdd(false)
+  }), viewing && /*#__PURE__*/React.createElement(ViewModal, {
+    recipe: viewing,
+    onSave: saveRecipe,
+    onDelete: deleteRecipe,
+    onClose: () => setViewing(null)
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: "sticky",
+      top: 0,
+      zIndex: 50,
+      background: w.card,
+      borderBottom: `1px solid ${w.border}`,
+      padding: "10px 16px"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      alignItems: "center",
+      gap: 10,
+      flexWrap: "wrap"
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 16,
+      fontWeight: 600,
+      color: w.accent,
+      flexShrink: 0
+    }
+  }, "🍲 Cozy Dinner Planner"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 4,
+      background: w.light,
+      padding: 3,
+      borderRadius: 12,
+      flexShrink: 0
+    }
+  }, tabBtn("planner", "This week"), tabBtn("recipes", recipesFullyLoaded && recipes.length > 0 ? `Recipes (${recipes.length})` : "Recipes")), tab === "recipes" && /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 8,
+      flex: 1,
+      flexWrap: "wrap",
+      alignItems: "center"
+    }
+  }, /*#__PURE__*/React.createElement("input", {
+    value: search,
+    onChange: e => setSearch(e.target.value),
+    placeholder: "Search…",
+    style: {
+      flex: 1,
+      minWidth: 100,
+      padding: "7px 10px",
+      borderRadius: 8,
+      border: `1px solid ${w.border}`,
+      background: w.bg,
+      color: w.text,
+      fontSize: 13,
+      outline: "none"
+    }
+  }), /*#__PURE__*/React.createElement("select", {
+    value: filterCat,
+    onChange: e => setFilterCat(e.target.value),
+    style: {
+      padding: "7px 8px",
+      borderRadius: 8,
+      border: `1px solid ${w.border}`,
+      background: w.bg,
+      color: w.text,
+      fontSize: 13,
+      outline: "none",
+      cursor: "pointer"
+    }
+  }, /*#__PURE__*/React.createElement("option", {
+    value: ""
+  }, "All"), CATEGORIES.map(c => /*#__PURE__*/React.createElement("option", {
+    key: c,
+    value: c
+  }, c))), /*#__PURE__*/React.createElement("select", {
+    value: sortBy,
+    onChange: e => setSortBy(e.target.value),
+    style: {
+      padding: "7px 8px",
+      borderRadius: 8,
+      border: `1px solid ${w.border}`,
+      background: w.bg,
+      color: w.text,
+      fontSize: 13,
+      outline: "none",
+      cursor: "pointer"
+    }
+  }, /*#__PURE__*/React.createElement("option", {
+    value: ""
+  }, "Sort…"), /*#__PURE__*/React.createElement("option", {
+    value: "avg-desc"
+  }, "Avg ↓"), /*#__PURE__*/React.createElement("option", {
+    value: "avg-asc"
+  }, "Avg ↑"), /*#__PURE__*/React.createElement("option", {
+    value: "his-desc"
+  }, "His ↓"), /*#__PURE__*/React.createElement("option", {
+    value: "his-asc"
+  }, "His ↑"), /*#__PURE__*/React.createElement("option", {
+    value: "hers-desc"
+  }, "Hers ↓"), /*#__PURE__*/React.createElement("option", {
+    value: "hers-asc"
+  }, "Hers ↑")), (filterCat || sortBy) && /*#__PURE__*/React.createElement("button", {
+    onClick: () => {
+      setFilterCat("");
+      setSortBy("");
+    },
+    style: {
+      background: "none",
+      border: `1px solid ${w.border}`,
+      borderRadius: 8,
+      padding: "6px 10px",
+      cursor: "pointer",
+      fontSize: 12,
+      color: w.muted
+    }
+  }, "Clear"), /*#__PURE__*/React.createElement("button", {
+    onClick: () => setShowAdd(true),
+    style: {
+      background: w.accent,
+      color: "#fff",
+      border: "none",
+      borderRadius: 8,
+      padding: "7px 14px",
+      cursor: "pointer",
+      fontSize: 13,
+      fontWeight: 500
+    }
+  }, "+ Add")))), loading && /*#__PURE__*/React.createElement("div", {
+    style: {
+      textAlign: "center",
+      padding: "60px 20px",
+      color: w.muted,
+      fontSize: 16
+    }
+  }, "Loading…"), error && /*#__PURE__*/React.createElement("div", {
+    style: {
+      textAlign: "center",
+      padding: "40px 20px",
+      color: w.danger
+    }
+  }, error, /*#__PURE__*/React.createElement("br", null), /*#__PURE__*/React.createElement("button", {
+    onClick: loadData,
+    style: {
+      marginTop: 12,
+      background: "none",
+      border: `1px solid ${w.border}`,
+      borderRadius: 8,
+      padding: "6px 16px",
+      cursor: "pointer",
+      color: w.muted,
+      fontSize: 13
+    }
+  }, "Retry")), !loading && !error && tab === "planner" && /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: "20px 16px",
+      maxWidth: 1000,
+      margin: "0 auto"
+    }
+  }, picking && /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: "#FFF3E0",
+      border: `1px solid ${w.accent2}`,
+      borderRadius: 10,
+      padding: "10px 14px",
+      marginBottom: 16,
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center"
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 14,
+      color: w.accent
+    }
+  }, "Picking dinner for ", /*#__PURE__*/React.createElement("strong", null, picking)), /*#__PURE__*/React.createElement("button", {
+    onClick: () => setPicking(null),
+    style: {
+      background: "none",
+      border: "none",
+      color: w.muted,
+      cursor: "pointer",
+      fontSize: 20
+    }
+  }, "×")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "grid",
+      gridTemplateColumns: "repeat(auto-fill,minmax(200px,1fr))",
+      gap: 14
+    }
+  }, DAYS.map(day => {
+    const rid = week[day];
+    const recipe = recipes.find(r => r.id === rid) || null;
+    const avg = recipe && recipe.myRating && recipe.partnerRating ? ((recipe.myRating + recipe.partnerRating) / 2).toFixed(1) : recipe ? recipe.myRating || recipe.partnerRating || null : null;
+    return /*#__PURE__*/React.createElement("div", {
+      key: day,
+      style: {
+        background: w.card,
+        border: `1px solid ${w.border}`,
+        borderRadius: 14,
+        overflow: "hidden",
+        display: "flex",
+        flexDirection: "column",
+        minHeight: 200
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        background: w.accent,
+        padding: "8px 12px"
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 13,
+        fontWeight: 500,
+        color: "#fff"
+      }
+    }, day)), recipe ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+      style: {
+        width: "100%",
+        height: 110,
+        background: w.light,
+        overflow: "hidden",
+        flexShrink: 0,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center"
+      }
+    }, recipe.image ? /*#__PURE__*/React.createElement("img", {
+      src: recipe.image,
+      alt: recipe.title,
+      style: {
+        width: "100%",
+        height: "100%",
+        objectFit: "cover"
+      }
+    }) : /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 32
+      }
+    }, "🍽")), /*#__PURE__*/React.createElement("div", {
+      style: {
+        padding: "8px 12px",
+        flex: 1,
+        display: "flex",
+        flexDirection: "column",
+        gap: 4
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontWeight: 500,
+        fontSize: 14,
+        color: w.text,
+        lineHeight: 1.3
+      }
+    }, recipe.title), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center"
+      }
+    }, avg && /*#__PURE__*/React.createElement("span", {
+      style: {
+        background: w.light,
+        color: w.accent,
+        borderRadius: 20,
+        padding: "2px 8px",
+        fontSize: 12,
+        fontWeight: 500
+      }
+    }, avg, "/10"), recipe.category && /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 11,
+        color: w.muted
+      }
+    }, recipe.category))), /*#__PURE__*/React.createElement("div", {
+      style: {
+        padding: "0 12px 8px",
+        display: "flex",
+        gap: 6
+      }
+    }, /*#__PURE__*/React.createElement("button", {
+      onClick: () => setViewing(recipe),
+      style: {
+        flex: 1,
+        background: "none",
+        border: `1px solid ${w.border}`,
+        borderRadius: 8,
+        padding: "5px",
+        cursor: "pointer",
+        fontSize: 12,
+        color: w.muted
+      }
+    }, "View"), /*#__PURE__*/React.createElement("button", {
+      onClick: () => setWeekDay(day, null),
+      style: {
+        flex: 1,
+        background: "none",
+        border: `1px solid #E8C4B8`,
+        borderRadius: 8,
+        padding: "5px",
+        cursor: "pointer",
+        fontSize: 12,
+        color: w.danger
+      }
+    }, "Clear"))) : /*#__PURE__*/React.createElement("button", {
+      onClick: () => pickMeal(day),
+      style: {
+        flex: 1,
+        background: "none",
+        border: "none",
+        cursor: "pointer",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 8,
+        padding: 16,
+        color: w.muted
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 28
+      }
+    }, "+"), /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 13
+      }
+    }, "Pick dinner")), /*#__PURE__*/React.createElement("div", {
+      style: {
+        padding: "0 12px 12px"
+      }
+    }, /*#__PURE__*/React.createElement("textarea", {
+      value: weekNotes[day] || "",
+      onChange: e => {
+        const v = e.target.value;
+        setWeekNotes(wn => ({
+          ...wn,
+          [day]: v
+        }));
+      },
+      onBlur: e => saveNote(day, e.target.value),
+      placeholder: "Notes…",
+      rows: 2,
+      style: {
+        width: "100%",
+        padding: "7px 9px",
+        borderRadius: 8,
+        border: `1px solid ${w.border}`,
+        background: w.bg,
+        color: w.text,
+        fontSize: 12,
+        resize: "none",
+        outline: "none",
+        fontFamily: "inherit"
+      }
+    })));
+  }))), !loading && !error && tab === "recipes" && /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: "20px 16px",
+      maxWidth: 900,
+      margin: "0 auto"
+    }
+  }, picking && /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: "#FFF3E0",
+      border: `1px solid ${w.accent2}`,
+      borderRadius: 10,
+      padding: "10px 14px",
+      marginBottom: 16,
+      fontSize: 14,
+      color: w.accent
+    }
+  }, "Picking dinner for ", /*#__PURE__*/React.createElement("strong", null, picking), " — tap \"Pick this\""), !recipesFullyLoaded && /*#__PURE__*/React.createElement("div", {
+    style: {
+      textAlign: "center",
+      padding: "8px",
+      marginBottom: 12,
+      fontSize: 13,
+      color: w.muted
+    }
+  }, "Loading the rest of your recipes…"), filtered.length === 0 && /*#__PURE__*/React.createElement("div", {
+    style: {
+      textAlign: "center",
+      padding: "40px 20px",
+      color: w.muted
+    }
+  }, recipes.length === 0 ? "No recipes yet — add your first one!" : "No recipes match your search"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "grid",
+      gridTemplateColumns: "repeat(auto-fill,minmax(200px,1fr))",
+      gap: 14
+    }
+  }, filtered.map(r => /*#__PURE__*/React.createElement(RecipeCard, {
+    key: r.id,
+    recipe: r,
+    onView: setViewing,
+    onSelect: selectRecipe,
+    selecting: !!picking,
+    ratingMode: ratingMode
+  })))));
+}
+ReactDOM.createRoot(document.getElementById("root")).render(/*#__PURE__*/React.createElement(App, null));
+  clearTimeout(window.__mountTimeout);
+}
+</script>
+</body>
+</html>
